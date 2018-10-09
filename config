@@ -3,7 +3,7 @@ BORDER S 1
     dbus-send --type=method_call --dest=org.onboard.Onboard /org/onboard/Onboard/Keyboard org.onboard.Onboard.Keyboard.ToggleVisible
 
 BORDER N 1
-    ./toggle_appfinder.sh
+    toggle_appfinder.sh
 
 # left and right are swapped
 MOVEMENT W 3

@@ -7,6 +7,7 @@
 #define MOV_SLOTS 10  // number of slots (eg maximum number of supported touch points
 #define MIN_EDGE_DISTANCE 10.0  // minimum gesture distance from edge (in mm)
 #define DISPLAYCONF "dims.txt" // name of display configuration
+#define CONFIG_PATH "config"
 #define LOGGING false
 #ifndef M_PI
     #define M_PI 3.14159265358979323846

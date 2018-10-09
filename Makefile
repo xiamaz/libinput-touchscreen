@@ -1,3 +1,5 @@
+PREFIX=$(HOME)/.local
+USERCONF=$(HOME)/.config
 BIN_NAME = libinput-touchscreen
 
 OPTS = -Wall -O2 -pipe
@@ -17,3 +19,10 @@ clean:
 .PHONY: run
 run: $(BIN_NAME)
 	./$<
+
+.PHONY: install
+install:
+	install -m755 $(BIN_NAME) $(PREFIX)/bin/
+	install -m755 ./toggle_appfinder.sh $(PREFIX)/bin/
+	mkdir -p $(USERCONF)/$(BIN_NAME)
+	install -m644 ./config $(USERCONF)/$(BIN_NAME)/

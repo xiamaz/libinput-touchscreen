@@ -4,6 +4,7 @@
 #include "list.h"
 
 #include <poll.h>
+#include <wordexp.h>
 
 #include <errno.h>
 #include <string.h>
@@ -159,12 +160,12 @@ void get_movements(struct libinput *li, struct movement *screen, list *rules) {
 	}
 }
 
-int get_device_event_loop(const char *devpath, const char *rulespath) {
+int get_device_event_loop(const char *devpath, const char *rulespath, const char *calibpath) {
 	struct movement screen;
-	if (access(DISPLAYCONF, F_OK) != -1) {
-		screen = read_screen_dimensions(DISPLAYCONF);
+	if (access(calibpath, F_OK) != -1) {
+		screen = read_screen_dimensions(calibpath);
 	} else {
-		screen = calibrate_touchscreen(devpath, DISPLAYCONF);
+		screen = calibrate_touchscreen(devpath, calibpath);
 	}
 
 	// load rules
@@ -191,11 +192,32 @@ int get_device_event_loop(const char *devpath, const char *rulespath) {
 	return 0;
 }
 
+#define PROGNAME "libinput-touchscreen"
+
+char *get_conf_path(const char *filename) {
+	const char *config_frag = "/.config/";
+	char *homedir = getenv("HOME");
+	size_t lconfdir = strlen(homedir) + strlen(config_frag) + strlen(PROGNAME) + 1 + strlen(filename) + 1;
+	char *confdir = calloc(lconfdir, sizeof *confdir);
+	memcpy(confdir, homedir, strlen(homedir));
+	strncat(confdir, config_frag, lconfdir);
+	strncat(confdir, PROGNAME, lconfdir);
+	strncat(confdir, "/", lconfdir);
+	strncat(confdir, filename, lconfdir);
+	return confdir;
+}
+
 
 int main(void) {
 	char *devpath = find_touch_device();
 	printf("Device found: %s\n", devpath);
-	get_device_event_loop(devpath, "./config");
+
+	char *config = get_conf_path(CONFIG_PATH);
+	char *display = get_conf_path(DISPLAYCONF);
+
+	get_device_event_loop(devpath, config, display);
 	free(devpath);
+	free(config);
+	free(display);
 	return 0;
 }

@@ -59,6 +59,9 @@ movement calibrate_touchscreen(const char *devpath, const char *dimfile) {
 			libinput_dispatch(li);
 		}
 		ready = get_ready_movements(movements);
+		if (ready == NULL) {
+			continue;
+		}
 		if (list_len(ready) > 1) {
 			printf("Please only use one finger\n");
 		} else {
@@ -84,7 +87,7 @@ movement calibrate_touchscreen(const char *devpath, const char *dimfile) {
 		}
 		list_destroy(ready);
 		if (cal == CALIBRATION_NUM) {
-			switch(calibration_stage++) {
+			switch(calibration_stage) {
 			case DIR_TOP:
 				screen.start.y = calibration_buffer[0];
 				for (int i = 0; i < CALIBRATION_NUM; i++) {
@@ -92,22 +95,8 @@ movement calibrate_touchscreen(const char *devpath, const char *dimfile) {
 						screen.start.y = calibration_buffer[i];
 					}
 				}
-				break;
-			case DIR_BOT:
-				screen.end.y = calibration_buffer[0];
-				for (int i = 0; i < CALIBRATION_NUM; i++) {
-					if (screen.end.y < calibration_buffer[i]) {
-						screen.end.y = calibration_buffer[i];
-					}
-				}
-				break;
-			case DIR_LEFT:
-				screen.start.x = calibration_buffer[0];
-				for (int i = 0; i < CALIBRATION_NUM; i++) {
-					if (screen.start.x > calibration_buffer[i]) {
-						screen.start.x = calibration_buffer[i];
-					}
-				}
+				printf("Now Right edge\n");
+				calibration_stage = DIR_RIGHT;
 				break;
 			case DIR_RIGHT:
 				screen.end.x = calibration_buffer[0];
@@ -116,28 +105,33 @@ movement calibrate_touchscreen(const char *devpath, const char *dimfile) {
 						screen.end.x = calibration_buffer[i];
 					}
 				}
+				printf("Now Bottom edge\n");
+				calibration_stage = DIR_BOT;
+				break;
+			case DIR_BOT:
+				screen.end.y = calibration_buffer[0];
+				for (int i = 0; i < CALIBRATION_NUM; i++) {
+					if (screen.end.y < calibration_buffer[i]) {
+						screen.end.y = calibration_buffer[i];
+					}
+				}
+				printf("Now Left edge\n");
+				calibration_stage = DIR_LEFT;
+				break;
+			case DIR_LEFT:
+				screen.start.x = calibration_buffer[0];
+				for (int i = 0; i < CALIBRATION_NUM; i++) {
+					if (screen.start.x > calibration_buffer[i]) {
+						screen.start.x = calibration_buffer[i];
+					}
+				}
+				printf("Finished calibrating. Saving to %s\n", dimfile);
+				calibration_stage = DIR_NONE;
 				break;
 			case DIR_NONE:
 				break;
 			}
 			cal = 0;
-			switch(calibration_stage) {
-			case DIR_TOP:
-				printf("Top edge\n");
-				break;
-			case DIR_BOT:
-				printf("Bottom edge\n");
-				break;
-			case DIR_LEFT:
-				printf("Left edge\n");
-				break;
-			case DIR_RIGHT:
-				printf("Right edge\n");
-				break;
-			case DIR_NONE:
-				printf("Finished calibrating. Saving to %s\n", dimfile);
-				break;
-			}
 		}
 		if (calibration_stage == DIR_NONE) {
 			break;

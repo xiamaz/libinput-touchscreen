@@ -169,9 +169,9 @@ list *get_ready_movements(struct movement *m) {
 	for (size_t i = 0; i < MOV_SLOTS; i++) {
 		if (m[i].ready) {
 			if (ready == NULL) {
-				ready = list_new(&i, sizeof(size_t));
+				ready = list_new(&i, sizeof(i));
 			} else {
-				list_append(ready, &i, sizeof(size_t));
+				list_append(ready, &i, sizeof(i));
 			}
 			m[i].ready = false;
 		}
