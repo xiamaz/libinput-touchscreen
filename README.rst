@@ -10,10 +10,12 @@ Currently supports:
 * link with arbitrary commands.
 
 TODO:
+
 * easier setup and calibration of screen
 * more gestures
 * visual indicators (will require overlays)
 
 Non-goals:
+
 * touch gesture filtering (requires integration into wayland compositor), but
   might be future project
