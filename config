@@ -1,0 +1,16 @@
+# Format: <BORDER|GESTURE|TAP> <DIRECTION:N,S,E,W,X> <NUM_FINGER>
+BORDER S 1
+    dbus-send --type=method_call --dest=org.onboard.Onboard /org/onboard/Onboard/Keyboard org.onboard.Onboard.Keyboard.ToggleVisible
+
+BORDER N 1
+    ./toggle_appfinder.sh
+
+# left and right are swapped
+MOVEMENT W 3
+    bspc desktop -f prev
+
+MOVEMENT E 3
+    bspc desktop -f next
+
+TAP X 2
+    xdotool click 3
