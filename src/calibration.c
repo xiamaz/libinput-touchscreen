@@ -23,9 +23,7 @@ movement read_screen_dimensions(const char *dimfile) {
 	screen.start.y = strtod(b, &b);
 	screen.end.y = strtod(b, &b);
 	fclose(dfile);
-#if LOGGING
-	printf("Screen: <%lf %lf> <%lf %lf>", screen.start.x, screen.end.x, screen.start.y, screen.end.y);
-#endif
+	logger("Screen: <%lf %lf> <%lf %lf>", screen.start.x, screen.end.x, screen.start.y, screen.end.y);
 	return screen;
 }
 
@@ -137,9 +135,7 @@ movement calibrate_touchscreen(const char *devpath, const char *dimfile) {
 			break;
 		}
 	}
-#if LOGGING
-	printf("Screen: <%lf %lf> <%lf %lf>", screen.start.x, screen.end.x, screen.start.y, screen.end.y);
-#endif
+	logger("Screen: <%lf %lf> <%lf %lf>", screen.start.x, screen.end.x, screen.start.y, screen.end.y);
 	FILE *f = fopen(dimfile, "we");
 	if (f == NULL) {
 		printf("Error opening dim file\n");

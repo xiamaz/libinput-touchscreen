@@ -4,6 +4,18 @@
 #include <stdio.h>
 #include <string.h>
 
+#if LOGGING
+void logger(const char *format, ...) {
+	va_list argptr;
+	va_start(argptr, format);
+	vfprintf(stderr, format, argptr);
+	va_end(argptr);
+}
+#else
+void logger(const char *format, ...) {
+};
+#endif
+
 double distance_euclidian(vec2 a, vec2 b) {
 	return sqrt(pow((a.x - b.x), 2.0) + pow((a.y - b.y), 2.0));
 }
@@ -120,27 +132,21 @@ void handle_event(struct libinput_event *event, movement *m) {
 		m[slot].end.y = m[slot].start.y;
 		m[slot].tend = m[slot].tstart;
 		m[slot].down = true;
-#if LOGGING
-		printf("%d down\n", slot);
-#endif
+		logger("%d down\n", slot);
 		break;
 	case LIBINPUT_EVENT_TOUCH_UP:
 		tevent = libinput_event_get_touch_event(event);
 		slot = libinput_event_touch_get_slot(tevent);
 		m[slot].ready = true;
 		m[slot].down = false;
-#if LOGGING
-		printf("%d up\n", slot);
-#endif
+		logger("%d up\n", slot);
 		break;
 	case LIBINPUT_EVENT_TOUCH_CANCEL:
 		tevent = libinput_event_get_touch_event(event);
 		slot = libinput_event_touch_get_slot(tevent);
 		m[slot].ready = false;
 		m[slot].down = false;
-#if LOGGING
-		printf("%dTouch cancel.\n", slot);
-#endif
+		logger("%dTouch cancel.\n", slot);
 		break;
 	case LIBINPUT_EVENT_TOUCH_MOTION:
 		tevent = libinput_event_get_touch_event(event);
@@ -148,14 +154,10 @@ void handle_event(struct libinput_event *event, movement *m) {
 		m[slot].end.x = libinput_event_touch_get_x(tevent);
 		m[slot].end.y = libinput_event_touch_get_y(tevent);
 		m[slot].tend = libinput_event_touch_get_time(tevent);
-#if LOGGING
-		printf("%d Motion\n", slot);
-#endif
+		logger("%d Motion\n", slot);
 		break;
 	case LIBINPUT_EVENT_TOUCH_FRAME:
-#if LOGGING
-		printf("Touch frame\n");
-#endif
+		logger("Touch frame\n");
 		break;
 	default:
 		printf("Unknown event type. %d\n", libinput_event_get_type(event));

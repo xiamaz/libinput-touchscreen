@@ -60,34 +60,38 @@ enum DIRECTION movement_border_direction(movement *m, list *ready, movement *scr
 	movement *cm;
 	vec2 startvec;
 	node *cur = ready->head;
+	logger("Movement border dir: start\n");
 	while (cur != NULL) {
 		cm = (m + *((size_t *)cur->value));
 		startvec = cm->start;
-		if (movement_length(cm) < MIN_EDGE_DISTANCE) {
-			continue;
-		}
-		if (startvec.x <= screen->start.x) {
-			return DIR_LEFT;
-		}
-		if (startvec.x >= screen->end.x) {
-			return DIR_RIGHT;
-		}
-		if (startvec.y <= screen->start.y) {
-			return DIR_TOP;
-		}
-		if (startvec.y >= screen->end.y) {
-			return DIR_BOT;
+		if (movement_length(cm) >= MIN_EDGE_DISTANCE) {
+			if (startvec.x <= screen->start.x) {
+				return DIR_LEFT;
+			}
+			if (startvec.x >= screen->end.x) {
+				return DIR_RIGHT;
+			}
+			if (startvec.y <= screen->start.y) {
+				return DIR_TOP;
+			}
+			if (startvec.y >= screen->end.y) {
+				return DIR_BOT;
+			}
 		}
 		cur = cur->next;
 	}
+	logger("Movement border dir: end\n");
 	return DIR_NONE;
 }
 
 gesture get_gesture(movement *m, movement *screen, list *ready) {
+	logger("Get gesture: begin\n");
 	gesture g = {0};
 	g.num = list_len(ready);
+	logger("Get gesture: list len %d\n", g.num);
 	g.dir = movement_direction(m, ready);
 	enum DIRECTION border_dir;
+	logger("Get gesture: got dir\n");
 	if (g.dir == DIR_NONE) {
 		g.type = GT_TAP;
 	} else if (g.num > 1) {
@@ -96,6 +100,7 @@ gesture get_gesture(movement *m, movement *screen, list *ready) {
 		g.type = GT_BORDER;
 		g.dir = border_dir;
 	}
+	logger("Get gesture: end\n");
 	return g;
 }
 
@@ -116,27 +121,23 @@ void trigger_rules(gesture *g, list *rules) {
 void handle_movements(movement *m, movement *screen, list *rules) {
 	// skip if some fingers are still on the screen
 	if (any_down(m)) {
-#if LOGGING
-		printf("Still down\n");
-#endif
+		logger("SKIP handle movements: any down\n");
 		return;
 	}
 	list *ready = get_ready_movements(m);
 	if (ready == NULL) {
-#if LOGGING
-		printf("None ready\n");
-#endif
+		logger("SKIP handle movements: none ready\n");
 		return;
 	}
-#if LOGGING
-	printf("Get gestures\n");
-#endif
+	logger("Handle movements: begin\n");
 	gesture g = get_gesture(m, screen, ready);
+	logger("Handle movements: got gesture\n");
 	print_gesture(&g);
 
 	trigger_rules(&g, rules);
 
 	list_destroy(ready);
+	logger("Handle movements: end\n");
 }
 
 void get_movements(struct libinput *li, struct movement *screen, list *rules) {
@@ -149,6 +150,7 @@ void get_movements(struct libinput *li, struct movement *screen, list *rules) {
 	fds.revents = 0;
 
 	while (poll(&fds, 1, -1) > -1) {
+		logger("Start poll cycle\n");
 		libinput_dispatch(li);
 		while ((event = libinput_get_event(li)) != NULL) {
 			// handle the event here
@@ -157,6 +159,7 @@ void get_movements(struct libinput *li, struct movement *screen, list *rules) {
 			libinput_dispatch(li);
 		}
 		handle_movements(movements, screen, rules);
+		logger("End poll cycle\n");
 	}
 }
 

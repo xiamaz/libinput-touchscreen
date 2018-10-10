@@ -53,6 +53,9 @@ typedef struct movement {
 	bool down;
 } movement;
 
+// Print logging information
+void logger(const char *format, ...);
+
 // String gesture to enum
 enum GESTTYPE str_to_gesttype(const char *s);
 // String direction to enum
