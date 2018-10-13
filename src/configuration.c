@@ -47,11 +47,8 @@ gesture *str_to_gesture(char *line) {
 char *str_to_command(const char *line) {
 	char *command = NULL;
 	// check that line starts with 4 spaces
-	for (int i = 0; i < 4; i++) {
-		if (line[i] != ' ') {
-			return command;
-		}
-	}
+	if(strncmp(line, "    ", 4) != 0)
+		return command
 	size_t size = strlen(line);
 	command = calloc(size - 3, 1);
 	memcpy(command, line + 4, size - 5); // 5 to remove newline and zero delim
