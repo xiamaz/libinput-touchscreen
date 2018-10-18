@@ -26,3 +26,4 @@ install:
 	install -m755 ./toggle_appfinder.sh $(PREFIX)/bin/
 	mkdir -p $(USERCONF)/$(BIN_NAME)
 	install -m644 ./config $(USERCONF)/$(BIN_NAME)/
+	install -m644 libinput-touchscreen.service $(USERCONF)/systemd/user/

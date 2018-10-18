@@ -1,0 +1,13 @@
+[Unit]
+Description=Gesture engine for touchscreen.
+After=xorg.target
+
+[Service]
+ExecStart=%h/.local/bin/libinput-touchscreen
+Type=simple
+Restart=always
+RestartSec=5
+# Environment=
+
+[Install]
+WantedBy=default.target
