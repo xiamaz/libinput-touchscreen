@@ -118,28 +118,6 @@ void trigger_rules(gesture *g, list *rules) {
 	}
 }
 
-void handle_movements(movement *m, movement *screen, list *rules) {
-	// skip if some fingers are still on the screen
-	if (any_down(m)) {
-		logger("SKIP handle movements: any down\n");
-		return;
-	}
-	list *ready = get_ready_movements(m);
-	if (ready == NULL) {
-		logger("SKIP handle movements: none ready\n");
-		return;
-	}
-	logger("Handle movements: begin\n");
-	gesture g = get_gesture(m, screen, ready);
-	logger("Handle movements: got gesture\n");
-	print_gesture(&g);
-
-	trigger_rules(&g, rules);
-
-	list_destroy(ready);
-	logger("Handle movements: end\n");
-}
-
 void get_movements(struct libinput *li, struct movement *screen, list *rules) {
 	// movements have pointer structs inside
 	struct movement movements[10] = {{{0}}};
@@ -158,7 +136,10 @@ void get_movements(struct libinput *li, struct movement *screen, list *rules) {
 			libinput_event_destroy(event);
 			libinput_dispatch(li);
 		}
-		handle_movements(movements, screen, rules);
+		// list *ready = get_ready_movements(movements);
+		// gesture g = get_gesture(movements, screen, ready);
+		// trigger_rules(&g, rules);
+		// list_destroy(ready);
 		logger("End poll cycle\n");
 	}
 }
@@ -173,14 +154,6 @@ int get_device_event_loop(const char *devpath, const char *rulespath, const char
 
 	// load rules
 	list *rules = load_rules(rulespath);
-
-	// node *cur = rules->head;
-	// while (cur != NULL) {
-	// 	print_gesture(&((rule *)cur->value)->key);
-	// 	printf("Command: %s\n", ((rule *)cur->value)->command);
-	// 	cur = cur->next;
-	// }
-	// return 0;
 
 	struct libinput *li = create_libinput_device_interface(devpath);
 	if (li == NULL) {

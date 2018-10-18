@@ -39,22 +39,38 @@ double scalar_product(vec2 a, vec2 b) {
 	return a.x * b.x + a.y * b.y;
 }
 
-double vec2_angle(vec2 a, struct vec2 b) {
+double vec2_angle(vec2 a, vec2 b) {
 	return acos(scalar_product(a, b) / (vec2_len(a) * vec2_len(b)));
 }
 
-double movement_angle(const movement *m) {
-	vec2 diff = vec2_sub(m->end, m->start);
-	vec2 base = (vec2){1, 0};
+// Calculate an angle between the vector spanned by a to b regarding a
+// reference [1 0] vector.
+double vec2_normalized_angle(vec2 a, vec2 b) {
+	vec2 diff = vec2_sub(a, b);
+	// ref 0 0 is UPPER left corner
+	vec2 base = (vec2){.x = 1, .y = 0};
 
 	if (diff.x == 0 && diff.y == 0) {
 		return NAN;
 	}
 
 	double angle = vec2_angle(diff, base);
-	base.x = 1;
-	base.y = 0;
+	if (diff.y > 0) {
+		angle = 2 * M_PI - angle;
+	}
+	return angle;
+}
+
+double movement_angle(const movement *m) {
+	vec2 diff = vec2_sub(m->end[0], m->start);
 	// ref 0 0 is UPPER left corner
+	vec2 base = (vec2){.x = 1, .y = 0};
+
+	if (diff.x == 0 && diff.y == 0) {
+		return NAN;
+	}
+
+	double angle = vec2_angle(diff, base);
 	if (diff.y > 0) {
 		angle = 2 * M_PI - angle;
 	}
@@ -62,7 +78,7 @@ double movement_angle(const movement *m) {
 }
 
 double movement_length(const movement *m) {
-	return distance_euclidian(m->end, m->start);
+	return distance_euclidian(m->end[0], m->start);
 }
 
 uint32_t movement_timedelta(const movement *m) {
@@ -116,8 +132,16 @@ enum DIRECTION angle_to_direction(double angle) {
 	return DIR_RIGHT;
 }
 
+#define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
+#define MAX(X, Y) MIN(Y, X)
+
 void handle_event(struct libinput_event *event, movement *m) {
 	int32_t slot;
+	double angle, distance;
+	vec2 cur;
+	vec2 da, db;
+	double ra, rb;
+	vec2 ref = {.x = 1, .y = 0};
 
 	struct libinput_event_touch *tevent;
 
@@ -125,36 +149,88 @@ void handle_event(struct libinput_event *event, movement *m) {
 	case LIBINPUT_EVENT_TOUCH_DOWN:
 		tevent = libinput_event_get_touch_event(event);
 		slot = libinput_event_touch_get_slot(tevent);
-		m[slot].start.x = libinput_event_touch_get_x(tevent);
-		m[slot].start.y = libinput_event_touch_get_y(tevent);
+		m[slot].start = (vec2){
+			.x = libinput_event_touch_get_x(tevent),
+			.y = libinput_event_touch_get_y(tevent),
+		};
 		m[slot].tstart = libinput_event_touch_get_time(tevent);
-		m[slot].end.x = m[slot].start.x;
-		m[slot].end.y = m[slot].start.y;
+		m[slot].end[0] = m[slot].start;
+		m[slot].end[1] = m[slot].start;
+		m[slot].end[2] = m[slot].start;
 		m[slot].tend = m[slot].tstart;
+		m[slot].sum_distance = 0;
+		m[slot].sum_dangle = 0;
+		m[slot].steps = 1;
 		m[slot].down = true;
-		logger("%d down\n", slot);
+		logger("E<Down> %d\n", slot);
 		break;
 	case LIBINPUT_EVENT_TOUCH_UP:
 		tevent = libinput_event_get_touch_event(event);
 		slot = libinput_event_touch_get_slot(tevent);
 		m[slot].ready = true;
 		m[slot].down = false;
-		logger("%d up\n", slot);
+		logger("E<Up> %d\n", slot);
 		break;
 	case LIBINPUT_EVENT_TOUCH_CANCEL:
 		tevent = libinput_event_get_touch_event(event);
 		slot = libinput_event_touch_get_slot(tevent);
 		m[slot].ready = false;
 		m[slot].down = false;
-		logger("%dTouch cancel.\n", slot);
+		logger("E<Cancel> %d\n", slot);
 		break;
 	case LIBINPUT_EVENT_TOUCH_MOTION:
 		tevent = libinput_event_get_touch_event(event);
 		slot = libinput_event_touch_get_slot(tevent);
-		m[slot].end.x = libinput_event_touch_get_x(tevent);
-		m[slot].end.y = libinput_event_touch_get_y(tevent);
+
+		cur = (vec2){
+			.x = libinput_event_touch_get_x(tevent),
+			.y = libinput_event_touch_get_y(tevent),
+		};
+		distance = distance_euclidian(cur, m[slot].end[0]);
+		da = vec2_sub(cur, m[slot].start);
+		db = vec2_sub(m[slot].end[0], m[slot].start);
+		angle = vec2_angle(da, db);
+		ra = vec2_angle(da, ref);
+		rb = vec2_angle(db, ref);
+		if (da.y > 0) {
+			ra = 2 * M_PI - ra;
+		}
+		if (db.y > 0) {
+			rb = 2 * M_PI - rb;
+		}
+		if ((ra + 2 * M_PI - rb) < (rb - ra)) {
+			if (ra + 2 * M_PI < rb) {
+				angle = -angle;
+			}
+		} else {
+			if (ra < rb) {
+				angle = -angle;
+			}
+		}
+
+		// add deltas
+		if (m[slot].steps < 3) {
+			m[slot].sum_dangle = 0;
+		} else {
+			m[slot].sum_dangle += angle;
+		}
+		m[slot].angle = angle;
+		m[slot].sum_distance += distance;
+		m[slot].end[2] = m[slot].end[1];
+		m[slot].end[1] = m[slot].end[0];
+		m[slot].end[0] = cur;
+		m[slot].steps++;
 		m[slot].tend = libinput_event_touch_get_time(tevent);
-		logger("%d Motion\n", slot);
+		printf("D: %lf A: %lf %lf SA: %lf SD: %lf\n",
+		       distance,
+		       rad_to_deg(ra), rad_to_deg(rb),
+		       rad_to_deg(m[slot].sum_dangle),
+		       m[slot].sum_distance);
+
+		// printf("A %lf\n",
+		//        rad_to_deg(movement_angle(m + slot)));
+
+		logger("E<Motion> %d\n", slot);
 		break;
 	case LIBINPUT_EVENT_TOUCH_FRAME:
 		logger("Touch frame\n");

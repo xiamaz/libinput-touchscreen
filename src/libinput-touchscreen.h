@@ -45,10 +45,14 @@ typedef struct vec2 {
 } vec2;
 
 typedef struct movement {
+  size_t steps;
 	vec2 start;
 	uint32_t tstart;
-	vec2 end;
+	vec2 end[3];
 	uint32_t tend;
+	double angle; // previous angle
+	double sum_distance; // change in distance
+	double sum_dangle; // summed angle delta
 	bool ready;
 	bool down;
 } movement;
